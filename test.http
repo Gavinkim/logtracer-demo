@@ -1,0 +1,12 @@
+POST http://localhost:8080/api/payment
+Content-Type: application/json
+
+{
+
+  "paymentKey": "T0000001",
+  "itemId": "DIA-100",
+  "amount": "200000",
+  "userId": "UUID-0039993"
+}
+
+###

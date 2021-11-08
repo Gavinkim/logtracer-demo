@@ -1,27 +1,40 @@
 package com.example.trace;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 
 @Slf4j
-@Component
-public class LogTraceComponent {
+public class LogTraceService implements LogTrace {
 
   private static final String START_PREFIX = "-->";
   private static final String COMPLETE_PREFIX = "<--";
   private static final String EX_PREFIX = "<X-";
 
+  private ThreadLocal<TraceInfo> traceInfoHolder = new ThreadLocal<>();
+
+  @Override
   public TraceStatus start(String message) {
-    TraceInfo traceInfo = new TraceInfo();
+    syncTraceInfo();
+    TraceInfo traceInfo = traceInfoHolder.get();
     Long startTimeMs = System.currentTimeMillis();
     log.info("[{}] {}{}", traceInfo.getId(), addSpace(START_PREFIX, traceInfo.getLevel()), message);
     return new TraceStatus(traceInfo, startTimeMs, message);
   }
 
+  private void syncTraceInfo(){
+    TraceInfo traceInfo = traceInfoHolder.get();
+    if(traceInfo == null) {
+      traceInfoHolder.set(new TraceInfo());
+    }else{
+      traceInfoHolder.set(traceInfo.createNextId());
+    }
+  }
+
+  @Override
   public void end(TraceStatus status) {
     complete(status, null);
   }
 
+  @Override
   public void exception(TraceStatus status, Exception e) {
     complete(status, e);
   }
@@ -38,6 +51,16 @@ public class LogTraceComponent {
           addSpace(EX_PREFIX, traceInfo.getLevel()), status.getMessage(), resultTimeMs,
           e.toString());
     }
+
+    releaseTraceInfo();
+  }
+  private void releaseTraceInfo(){
+    TraceInfo traceInfo = traceInfoHolder.get();
+    if(traceInfo.isFirstLevel()) {
+      traceInfoHolder.remove();
+    }else{
+      traceInfoHolder.set(traceInfo.createPreviousId());
+    }
   }
 
   private static String addSpace(String prefix, int level) {
@@ -47,5 +70,4 @@ public class LogTraceComponent {
     }
     return sb.toString();
   }
-
 }

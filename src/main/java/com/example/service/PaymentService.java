@@ -1,5 +1,6 @@
 package com.example.service;
 
+import com.example.annotation.LogTrace;
 import com.example.dto.PaymentCancelReq;
 import com.example.dto.PaymentCancelRes;
 import com.example.dto.PaymentReq;
@@ -18,8 +19,14 @@ public class PaymentService {
 
   private final PaymentRepository paymentRepository;
 
-  public PaymentRes payment(PaymentReq request) {
-    return paymentRepository.payment(request);
+  @LogTrace
+  public PaymentRes payment(PaymentReq request) throws Exception {
+    PaymentRes response =  paymentRepository.payment(request);
+
+    if(request.getPaymentKey().equalsIgnoreCase("ex")){
+      throw new Exception("test ex");
+    }
+    return response;
   }
   public PaymentCancelRes cancel(PaymentCancelReq request) {
     return paymentRepository.cancel(request);
